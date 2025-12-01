@@ -12,3 +12,5 @@ flask_sqlalchemy
 flask_jwt_extended
 chardet
 gunicorn
+sqlalchemy
+pymysql
