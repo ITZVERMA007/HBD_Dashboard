@@ -520,13 +520,14 @@ def upload_yellow_pages_data():
 
     connection = None
     inserted = 0
+    batch_size = 10000
 
     try:
         # database connection
         connection = mysql.connector.connect(
             host=os.getenv('DB_HOST'),
             user=os.getenv('DB_USER'),
-            password=os.getenv('DB_PASSWORD'),
+            password=os.getenv('DB_PASSWORD_PLAIN'),
             database=os.getenv('DB_NAME'),
             port=os.getenv('DB_PORT')
         )
@@ -544,23 +545,24 @@ def upload_yellow_pages_data():
 
                 for row in df.itertuples(index=False):
                     row_tuple = (
-                        safe_get(row, 'name'),
-                        safe_get(row, 'address'),
-                        safe_get(row, 'area'),
-                        safe_get(row, 'number'),
-                        safe_get(row, 'mail'),
-                        safe_get(row, 'category'),
-                        safe_get(row, 'pincode'),
-                        safe_get(row, 'city'),
-                        safe_get(row, 'state'),
-                        safe_get(row, 'country')
+                        safe_get(row, 'Name'),
+                        safe_get(row, 'Address'),
+                        safe_get(row, 'Area'),
+                        safe_get(row, 'Number'),
+                        safe_get(row, 'Mail'),
+                        safe_get(row, 'Category'),
+                        safe_get(row, 'Pincode'),
+                        safe_get(row, 'City'),
+                        safe_get(row, 'State'),
+                        safe_get(row, 'Country'),
+                        safe_get(row, 'Source')
                     )
 
                     rows_to_insert.append(row_tuple)
                     inserted += 1
 
             insert_query = """
-                INSERT INTO yellow (
+                INSERT INTO yellow_pages (
                     name, address, area, number, mail, category,
                     pincode, city, state, country
                 )
@@ -586,68 +588,188 @@ def upload_yellow_pages_data():
         "rows_inserted": inserted
     }), 200
 
-@app.route('/upload_google_data', methods=["POST"])
+@app.route('/upload_google_map_data', methods=["POST"])
 def upload_google_data():
 
     connection = None
     inserted = 0
+    batch_size = 10000
     try:
         print("Connecting with:", os.getenv('DB_HOST'), os.getenv('DB_USER'), os.getenv('DB_NAME'))
         connection = mysql.connector.connect(
            host=os.getenv('DB_HOST'),
            user=os.getenv('DB_USER'),
-           password=os.getenv('DB_PASSWORD'),
+           password=os.getenv('DB_PASSWORD_PLAIN'),
            database=os.getenv('DB_NAME'),
            port=os.getenv('DB_PORT')
         )
         cursor = connection.cursor()
         if request.files:
             files = request.files.getlist("file")
-            total_row_data = []
             for file in files:
                 if file.filename == "": # handling empty files
                     continue   
-                currFile = pd.read_csv(file)
-                for row in currFile.itertuples(index=False):
-                    print(row)
-                    row_tuple = (
-                    safe_get(row, 'name'),
-                    safe_get(row, 'address'),
-                    safe_get(row, 'website'),
-                    safe_get(row, 'phone_number'),
-                    safe_get(row, 'reviews_count'),
-                    safe_get(row, 'reviews_average'),
-                    safe_get(row, 'category'),
-                    safe_get(row, 'subcategory'),
-                    safe_get(row, 'city'),
-                    safe_get(row, 'state'),
-                    safe_get(row, 'area')
-                    )
-                    total_row_data.append(row_tuple)
-                    inserted+=1  # keeping track of total rows being added
+                currFile_chunks = pd.read_csv(file,chunksize = batch_size)
+                for chunk in currFile_chunks:
+                    chunk_data = []
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
+                        safe_get(row, 'Business Name'),
+                        safe_get(row, 'Phone'),
+                        safe_get(row, 'Email'),
+                        safe_get(row, 'Website'),
+                        safe_get(row, 'Address'),
+                        safe_get(row, 'Latitude'),
+                        safe_get(row, 'Longitude'),
+                        safe_get(row, 'Rating'),
+                        safe_get(row, 'Review'),
+                        safe_get(row, 'Category'),
+                        safe_get(row, 'Image1'),
+                        safe_get(row, 'Image2'),
+                        safe_get(row, 'Image3'),
+                        safe_get(row, 'Image4'),
+                        safe_get(row, 'Image5'),
+                        safe_get(row, 'Image6'),
+                        safe_get(row, 'Image7'),
+                        safe_get(row, 'Image8'),
+                        safe_get(row, 'Image9'),
+                        safe_get(row, 'Image10'),
+                        safe_get(row, 'WorkingHour'),
+                        safe_get(row, 'Facebookprofile'),
+                        safe_get(row, 'instagramprofile'),
+                        safe_get(row, 'linkedinprofile'),
+                        safe_get(row, 'Twitterprofile'),
+                        safe_get(row, 'Source'),
+                        safe_get(row, 'Id'),
+                        safe_get(row, 'GMapsLink'),
+                        safe_get(row, 'OrganizationName'),
+                        safe_get(row, 'OrganizationId'),
+                        safe_get(row, 'RateStars'),
+                        safe_get(row, 'ReviewsTotalCount'),
+                        safe_get(row, 'PricePolicy'),
+                        safe_get(row, 'OrganizationCategory'),
+                        safe_get(row, 'OrganizationAddress'),
+                        safe_get(row, 'OrganizationLocatedInInformation'),
+                        safe_get(row, 'OrganizationWebsite'),
+                        safe_get(row, 'OrganizationPhoneNr'),
+                        safe_get(row, 'OrganizationPlusCode'),
+                        safe_get(row, 'OrganizationWorkTime'),
+                        safe_get(row, 'OrganizationPopularLoadTimes'),
+                        safe_get(row, 'OrganizationLatitude'),
+                        safe_get(row, 'OrganizationLongitude'),
+                        safe_get(row, 'OrganizationShortDescription'),
+                        safe_get(row, 'OrganizationHeadPhotoFile'),
+                        safe_get(row, 'OrganizationHeadPhotoURL'),
+                        safe_get(row, 'OrganizationHeadPhotosFiles'),
+                        safe_get(row, 'OrganizationHeadPhotosURLs'),
+                        safe_get(row, 'OrganizationEmail'),
+                        safe_get(row, 'OrganizationFacebook'),
+                        safe_get(row, 'OrganizationInstagram'),
+                        safe_get(row, 'OrganizationTwitter'),
+                        safe_get(row, 'OrganizationLinkedIn'),
+                        safe_get(row, 'OrganizationYouTube'),
+                        safe_get(row, 'OrganizationContactsURL'),
+                        safe_get(row, 'OrganizationYelp'),
+                        safe_get(row, 'OrganizationTripAdvisor'),
+                        safe_get(row, 'SearchRequest'),
+                        safe_get(row, 'ShareLink'),
+                        safe_get(row, 'ShareLinkOrganizationId'),
+                        safe_get(row, 'EmbedMapCode'),
+                        )   
+                        chunk_data.append(row_tuple)
 
                     # storing the valus in the database
-            print(total_row_data)
-            upload_google_map_data_query = '''
-                INSERT INTO google_map (
-                    name, address, website, phone_number, reviews_count, reviews_average, category, subcategory, city, state, area
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            '''
-            cursor.executemany(upload_google_map_data_query,
-                total_row_data
-            )
-            connection.commit()
+                    upload_google_map_data_query = '''
+                        INSERT INTO google_map (
+                            business_name,
+                            phone,  
+                            email ,
+                            website ,
+                            address , 
+                            latitude ,
+                            longitude ,
+                            rating ,
+                            review ,
+                            category,
+                            image1,
+                            image2,
+                            image3,
+                            image4,
+                            image5,
+                            image6 ,
+                            image7  ,
+                            image8  ,
+                            image9  ,
+                            image10  ,
+                            working_hour  ,
+                            facebook_profile  ,
+                            instagram_profile , 
+                            linkedin_profile  ,
+                            twitter_profile  ,
+                            source_name,
+                            g_id ,
+                            gmaps_link  ,
+                            organization_name ,
+                            organization_id ,
+                            rate_stars,
+                            reviews_total_count  ,
+                            price_policy  ,
+                            organization_category ,
+                            organization_address  ,
+                            organization_locatedin_information  ,
+                            organization_website  ,
+                            organization_phone_number ,
+                            organization_pluscode ,
+                            organization_work_time  ,
+                            organization_popular_load_times  ,
+                            organiztion_latitude ,
+                            organization_longitude ,
+                            organization_short_description  ,
+                            organization_head_photo_file  ,
+                            organization_head_photo_url  ,
+                            organization_photos_files  ,
+                            organizatiion_photos_urls  ,
+                            organization_email ,
+                            organization_facebook  ,
+                            organization_instagram  ,
+                            organization_twitter  ,
+                            organization_linkedin  ,
+                            organization_youtube  ,
+                            organization_contacts_url  ,
+                            organization_yelp  ,
+                            organization_trip_advisor  ,
+                            search_request  ,
+                            share_link  ,
+                            share_link_organization_id  ,
+                            embed_map_code ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s )
+                    '''
+                    cursor.executemany(upload_google_map_data_query,
+                        chunk_data
+                    )
+                    inserted+=len(chunk_data)
+                    connection.commit()
     except Error as e:
         print(f"Error uploading data inside the google_map table: {e}")
         return jsonify({
             "status": "error",
-            "message": "Invalid CSV format"
+            "message": f"Database Error: {e}"
         }), 400
+    except Exception as e:
+        return jsonify({
+            "status":"error",
+            "message":f"Processing Error: {e}"
+        }),500
     finally:
         if connection and connection.is_connected():
             connection.close()
     return jsonify({
-    "status": "success"
+    "status": "success",
+    "message":f'Inserted:{inserted}'
 })
 
             
@@ -656,7 +778,7 @@ def upload_google_data():
 DB_CONFIG_AMAZON = {
     'host': os.getenv('DB_HOST'),
     'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),
+    'password': os.getenv('DB_PASSWORD_PLAIN'),
     'database': os.getenv('DB_NAME'),
     'port': os.getenv('DB_PORT')
 }
