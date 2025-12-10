@@ -17,7 +17,7 @@ from fake_useragent import UserAgent
 from config import Config
 from extensions import db, jwt, cors
 import pandas as pd
-
+import ast
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -469,6 +469,293 @@ def clean_data_decimal(value):
     return value
 
 
+# this function is used to convert the list type of data present in string form to convert it back into list type and then to the JSON type
+
+def to_valid_json(val):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return None
+    try:
+        # Convert string val to list type and then the list type is converted into JSON type
+        return json.dumps(ast.literal_eval(val))
+    except:
+        return None
+
+@app.route('/upload_shiksha_data', methods=["POST"])
+def upload_shiksha_data():
+
+    connection = None
+    inserted = 0
+    batch_size = 10000
+    try:
+        connection = mysql.connector.connect(
+            host=os.getenv('DB_HOST'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD_PLAIN'),
+            database=os.getenv('DB_NAME'),
+            port=os.getenv('DB_PORT')
+        )
+        cursor = connection.cursor()
+
+
+        if request.files:
+            files = request.files.getlist("file")
+            for file in files:
+                if file.filename == "":
+                    continue
+                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                for chunk in chunkFile_data:
+                    chunk = chunk.rename(columns = lambda c:c.replace(' ','_'))
+                    chunk_data = []
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
+                        safe_get(row, 'Name'),
+                        safe_get(row, 'Address'),
+                        safe_get(row, 'Area'),
+                        safe_get(row, 'Latitude'),
+                        safe_get(row, 'Longitude'),
+                        safe_get(row, 'Amission_requirement'),
+                        to_valid_json(safe_get(row, 'Courses')),
+                        safe_get(row, 'Avg_Fees'),
+                        safe_get(row, 'Salary'),
+                        safe_get(row, 'Rating'),
+                        safe_get(row, 'Number'),
+                        safe_get(row, 'Website'),
+                        to_valid_json(safe_get(row, 'Mail')),
+                        safe_get(row, 'category'),
+                        safe_get(row, 'country'),
+                        )
+                        chunk_data.append(row_tuple)
+
+                    # execute batch insert
+                    insert_query = '''
+                        INSERT INTO shiksha (
+                            name, address, area, latitude, longitude, admission_requirement, courses, avg_fees, avg_salary, rating, number, website, email, category, country
+                        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        ON DUPLICATE KEY UPDATE
+                            area = VALUES(area),
+                            latitude = VALUES(latitude),
+                            longitude = VALUES(longitude),
+                            admission_requirement = VALUES(admission_requirement),
+                            courses = VALUES(courses),
+                            avg_fees = VALUES(avg_fees),
+                            avg_salary = VALUES(avg_salary),
+                            rating = VALUES(rating),
+                            number = VALUES(number),
+                            website = VALUES(website),
+                            email = VALUES(email),
+                            category = VALUES(category),
+                            country = VALUES(country);
+                        '''
+                    cursor.executemany(insert_query, chunk_data)
+                    connection.commit()
+            cursor.close()
+            cursor = connection.cursor()
+            cursor.execute('Select count(*) from shiksha')
+            inserted = cursor.fetchone()
+    except Error as e:
+        print("Error inserting data:", e)
+        return jsonify({
+            "status": "error",
+            "message": f"Database error:{e}"
+        }), 400
+    except Exception as e:
+        print("Error inserting the data:",e)
+        return jsonify({
+            "status":"error",
+            "message":f"Processiong error:{e}"
+        })
+    finally:
+        if connection and connection.is_connected():
+            connection.close()
+
+
+    return jsonify({
+        "status": "success",
+        "inserted_rows": inserted
+    }),200
+
+@app.route('/upload_google_map_scrape_data', methods=["POST"])
+def upload_google_map_scrape_data():
+
+    connection = None
+    inserted = 0
+    batch_size = 10000
+    try:
+        connection = mysql.connector.connect(
+            host=os.getenv('DB_HOST'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD_PLAIN'),
+            database=os.getenv('DB_NAME'),
+            port=os.getenv('DB_PORT')
+        )
+        cursor = connection.cursor()
+
+
+        if request.files:
+            files = request.files.getlist("file")
+            for file in files:
+                if file.filename == "":
+                    continue
+                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                for chunk in chunkFile_data:
+                    chunk_data = []
+                    chunk = chunk.rename(columns = lambda c: c.replace(' ','_'))
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
+                        safe_get(row, 'Name'),
+                        safe_get(row, 'Mobile_Number'),
+                        safe_get(row, 'Review_Count'),
+                        safe_get(row, 'Rating'),
+                        safe_get(row, 'Catagory'),
+                        safe_get(row, 'Address'),
+                        safe_get(row, 'Website'),
+                        safe_get(row, 'Email_Id'),
+                        safe_get(row, 'PlusCode'),
+                        safe_get(row, 'Closing_Hours'),
+                        safe_get(row, 'latitude'),
+                        safe_get(row, 'latitude'),
+                        safe_get(row, 'Instagram_Profile'),
+                        safe_get(row, 'Facebook_Profile'),
+                        safe_get(row, 'Linkedin_Profile'),
+                        safe_get(row, 'Twitter_Profile'),
+                        safe_get(row, 'Images_Folder'),
+                        )
+                        chunk_data.append(row_tuple)
+
+                    # execute batch insert
+                    insert_query = '''
+                        INSERT INTO google_map_scrape (
+                            name, number, review_count, rating, category, address, website, email, pluscode, closing_hours, latitude, longitude, instagram_profile, facebook_profile, linkedin_profile, twitter_profile, images_folder,
+                        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        ON DUPLICATE KEY UPDATE
+                            number = VALUES(number),
+                            review_count = VALUES(review_count),
+                            rating = VALUES(rating),
+                            category = VALUES(category),
+                            website = VALUES(website),
+                            email = VALUES(email),
+                            pluscode = VALUES(pluscode),
+                            closing_hours = VALUES(closing_hours),
+                            latitude = VALUES(latitude),
+                            longitude = VALUES(longitude),
+                            instagram_profile = VALUES(instagram_profile),
+                            facebook_profile = VALUES(facebook_profile),
+                            linkedin_profile = VALUES(linkedin_profile),
+                            twitter_profile = VALUES(twitter_profile),
+                            images_folder = VALUES(images_folder);
+                        '''
+                    cursor.executemany(insert_query, chunk_data)
+                    connection.commit()
+            cursor.close()
+            cursor = connection.cursor()
+            cursor.execute('Select count(*) from google_map_scrape')
+            inserted = cursor.fetchone()
+    except Error as e:
+        print("Error inserting data:", e)
+        return jsonify({
+            "status": "error",
+            "message": f"Database error:{e}"
+        }), 400
+    except Exception as e:
+        print("Error inserting the data:",e)
+        return jsonify({
+            "status":"error",
+            "message":f"Processiong error:{e}"
+        })
+    finally:
+        if connection and connection.is_connected():
+            connection.close()
+
+
+    return jsonify({
+        "status": "success",
+        "inserted_rows": inserted
+    }),200
+
+
+@app.route('/upload_magicpin_data', methods=["POST"])
+def upload_magicpin_data():
+
+    connection = None
+    batch_size = 10000
+    inserted = 0
+    try:
+        print("\nUploading Magicpin Data...")
+        print("Connecting:", os.getenv('DB_HOST'), os.getenv('DB_USER'), os.getenv('DB_NAME'))
+
+        connection = mysql.connector.connect(
+            host=os.getenv('DB_HOST'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD_PLAIN'),
+            database=os.getenv('DB_NAME'),
+            port=os.getenv('DB_PORT')
+        )
+        cursor = connection.cursor()
+
+
+        if request.files:
+            files = request.files.getlist("file")
+            # total_rows = []
+
+            for file in files:
+                if file.filename == "":
+                    continue
+
+                df = pd.read_csv(file,chunksize = batch_size)
+
+                for chunk in df:
+                    chunk_data = []
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
+                        safe_get(row, 'name'),
+                        safe_get(row, 'number'),
+                        safe_get(row, 'rating'),
+                        safe_get(row, 'avgspent'),
+                        safe_get(row, 'address'),
+                        safe_get(row, 'area'),
+                        safe_get(row, 'subcategory'),
+                        safe_get(row, 'city'),
+                        safe_get(row, 'category'),
+                        safe_get(row, 'costfortwo'),
+                        safe_get(row, 'latitude'),
+                        safe_get(row, 'longitude')
+                        )
+                        chunk_data.append(row_tuple)
+                insert_query = """
+                    INSERT INTO magicpin (
+                        name,
+                        number,
+                        rating,
+                        avg_spent,
+                        address,
+                        area,
+                        subcategory,
+                        city,
+                        category,
+                        cost_for_two,
+                        latitude,
+                        longitude
+                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """
+
+                cursor.executemany(insert_query, chunk_data)
+                connection.commit()
+            cursor.close()
+            cursor = connection.cursor()
+            cursor.execute('Select count(*) from magicpin')
+            inserted = cursor.fetchone()
+    except Error as e:
+        print("Magicpin Upload Error:", e)
+        return jsonify({"status": "failed", "error": str(e)}), 500
+
+    finally:
+        if connection and connection.is_connected():
+            connection.close()
+    return jsonify({
+                "status": "success",
+                "inserted_rows": inserted
+            })
+
 @app.route('/upload_freelisting_data', methods=["POST"])
 def upload_freelisting_data():
 
@@ -835,7 +1122,7 @@ def upload_nearbuy_data():
                         safe_get(row, 'Address'),
                         safe_get(row, 'Latitude'),
                         safe_get(row, 'Longitude'),
-                        safe_get(row, 'Number'),
+                        to_valid_json(safe_get(row, 'Number')),
                         safe_get(row, 'Rating'),
                         safe_get(row, 'Country'),
                         safe_get(row, 'City'),
@@ -927,11 +1214,11 @@ def upload_pinda_data():
                     # execute batch insert
                     insert_query = '''
                         INSERT INTO pinda (
-                            name, url, address, phone, category, country, city
+                            name, url, address, number, category, country, city
                         ) VALUES (%s,%s,%s,%s,%s,%s,%s)
                         ON DUPLICATE KEY UPDATE
                             url = VALUES(url),
-                            phone = VALUES(phone),
+                            number = VALUES(number),
                             category = VALUES(category),
                             country = VALUES(country),
                             city = VALUES(city);
@@ -1346,8 +1633,7 @@ def upload_schoolgis_data():
                         safe_get(row, 'City'),
                         safe_get(row, 'State'),
                         safe_get(row, 'Country'),
-                        safe_get(row, 'Category'),
-                        safe_get(row,'Source'),
+                        safe_get(row, 'Category')
                         )
                         chunk_data.append(row_tuple)
 
@@ -1355,16 +1641,15 @@ def upload_schoolgis_data():
                     insert_query = '''
                         INSERT INTO schoolgis (
                             name, pincode, latitude, longitude, subcategory,
-                            city, state, country,category,source
-                        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                            city, state, country,category
+                        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                         ON DUPLICATE KEY UPDATE
                             pincode = VALUES(pincode),
                             subcategory = VALUES(subcategory),
                             city = VALUES(city),
                             state = VALUES(state),
                             country = VALUES(country),
-                            category = VALUES(category),
-                            source = VALUES(source);
+                            category = VALUES(category);
                         '''
                     cursor.executemany(insert_query, chunk_data)
                     connection.commit()
@@ -1432,8 +1717,7 @@ def upload_yellow_pages_data():
                             safe_get(row, 'Pincode'),
                             safe_get(row, 'City'),
                             safe_get(row, 'State'),
-                            safe_get(row, 'Country'),
-                            safe_get(row, 'Source')
+                            safe_get(row, 'Country')
                         )
 
                         chunk_data.append(row_tuple)
@@ -1441,9 +1725,9 @@ def upload_yellow_pages_data():
                     insert_query = """
                         INSERT INTO yellow_pages (
                             name, address, area, number, email, category,
-                            pincode, city, state, country, source
+                            pincode, city, state, country
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE
                         area = VALUES(area),
                         number = VALUES(number),
@@ -1452,8 +1736,7 @@ def upload_yellow_pages_data():
                         pincode = VALUES(pincode),
                         city = VALUES(city),
                         state = VALUES(state),
-                        country = VALUES(country),
-                        source = VALUES(source);
+                        country = VALUES(country);
                     """
 
                     cursor.executemany(insert_query, chunk_data)
@@ -1578,7 +1861,7 @@ def upload_google_data():
                     upload_google_map_data_query = '''
                         INSERT INTO google_map (
                             business_name,
-                            phone,  
+                            number,  
                             email ,
                             website ,
                             address , 
@@ -1644,7 +1927,7 @@ def upload_google_data():
                             %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
                             %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )
                             ON DUPLICATE KEY UPDATE 
-                            phone = VALUES(phone),
+                            number = VALUES(number),
                             email = VALUES(email),
                             website = VALUES(website),
                             latitude = VALUES(latitude),
