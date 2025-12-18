@@ -10,9 +10,8 @@ const OthersDataUploader = () => {
   // Handle file selection
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-
-    // Validate file size & type
     const validFiles = [];
+
     for (let file of selectedFiles) {
       if (!file.name.endsWith(".csv")) {
         alert(`${file.name} is not a CSV file`);
@@ -39,7 +38,7 @@ const OthersDataUploader = () => {
 
     const formData = new FormData();
     files.forEach((file) => {
-      formData.append("files", file); // backend should accept "files"
+      formData.append("files", file);
     });
 
     try {
@@ -114,12 +113,12 @@ const OthersDataUploader = () => {
                   r="10"
                   stroke="currentColor"
                   strokeWidth="4"
-                ></circle>
+                />
                 <path
                   className="opacity-75"
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8v8H4z"
-                ></path>
+                />
               </svg>
               Uploading...
             </span>
@@ -132,4 +131,4 @@ const OthersDataUploader = () => {
   );
 };
 
-export default OthersDataImport;
+export default OthersDataUploader;
