@@ -402,6 +402,15 @@ export const routes = [
             element: <ProductIncomplate />,
           },
         ],
+            element: <ProductIncomplate/>,
+         },
+         {
+          icon: <TableCellsIcon {...icon} />,
+          name: "Amazon Data",
+          path: "product-master-data/amazon-data",
+          element: "ProductAmazonData",
+         }
+        ]
       },
       {
         icon: <TableCellsIcon {...icon} />,
