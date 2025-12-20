@@ -10,3 +10,5 @@ COPY . .
 RUN mkdir -p /app/tmp/uploads
 
 ENV PYTHONUNBUFFERED=1
+
+CMD gunicorn app:app -b 0.0.0.0:$PORT
