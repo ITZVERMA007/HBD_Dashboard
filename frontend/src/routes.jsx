@@ -34,6 +34,7 @@ import ProductIncomplate from "./componunts/product master data/ProductIncomplat
 // --- NEW IMPORT ADDED HERE ---
 import AmazonData from "./componunts/product master data/AmazonData"; 
 import FlipkartData from "./componunts/product master data/FlipkartData";
+import BigBasketData from "./componunts/product master data/BigBasket";
 import ServiceComplate from "./componunts/service master data/ServiceComplate";
 import ServiceIncomplate from "./componunts/service master data/ServiceIncomplate";
 import GoogleMapScrapper from "./componunts/scrapper/GoogleMapScrapper";
@@ -436,6 +437,12 @@ export const routes = [
             name: "Flipkart Data",
             path: "product-master-data/flipkart-data",
             element: <FlipkartData />,
+          },
+          {
+            icon: <TableCellsIcon {...icon} />,
+            name: "BigBasket Data",
+            path: "product-master-data/bigbasket-data",
+            element: <BigBasketData />,
           }
         ]
       },
