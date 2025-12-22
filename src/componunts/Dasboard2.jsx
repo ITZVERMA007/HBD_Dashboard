@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import CountUp from "react-countup";
 import {
   Card,
   CardBody,
@@ -15,7 +14,7 @@ import {
   ServerStackIcon,
   GlobeAmericasIcon,
   ChartBarIcon,
-  Squares2X2Icon,
+  ClockIcon,
 } from "@heroicons/react/24/solid";
 import api from "../utils/Api";
 
@@ -24,7 +23,8 @@ export function Dasboard2() {
     productCount: 0,
     cityCount: 0,
     categoryCount: 0,
-    cityCategoryCount: 0, 
+    pendingCities: 0,
+    pendingCategories: 0,
     loading: true,
   });
 
@@ -40,21 +40,17 @@ export function Dasboard2() {
 
         const uniqueCities = new Set(products.map((p) => p.city)).size;
         const uniqueCategories = new Set(products.map((p) => p.category)).size;
-        
-        // Calculate the unique "City + Category" combinations
-        const cityCategoryPairs = new Set(
-          products.map((p) => `${p.city}-${p.category}`)
-        ).size;
 
         setStats({
           productCount: products.length,
           cityCount: uniqueCities,
           categoryCount: uniqueCategories,
-          cityCategoryCount: cityCategoryPairs,
+          pendingCities: 0, 
+          pendingCategories: 0,
           loading: false,
         });
       } catch (error) {
-        console.error("Error fetching dashboard stats:", error);
+        console.error("error fetching products:", error);
         setStats((prev) => ({ ...prev, loading: false }));
       }
     };
@@ -81,7 +77,7 @@ export function Dasboard2() {
         
         <div className="flex items-end justify-between mt-4">
           <Typography variant="h2" color="blue-gray" className="font-black">
-            {stats.loading ? "..." : <CountUp end={value} duration={2} separator="," />}
+            {stats.loading ? "..." : value?.toLocaleString()}
           </Typography>
           
           {link && (
@@ -97,10 +93,27 @@ export function Dasboard2() {
     </Card>
   );
 
+  const SlimStatsCard = ({ label, value, icon: Icon }) => (
+    <Card className="border border-gray-200 bg-gradient-to-r from-white to-gray-100 shadow-sm">
+      <CardBody className="flex items-center justify-between p-5">
+        <div className="flex items-center gap-4">
+          <div className="p-2 bg-white rounded-lg shadow-sm border border-gray-100">
+            <Icon className="h-5 w-5 text-green-600" />
+          </div>
+          <Typography className="font-bold text-gray-700 text-sm md:text-base">
+            {label}
+          </Typography>
+        </div>
+        <Typography variant="h4" color="blue-gray" className="font-black">
+          {stats.loading ? "0" : value?.toLocaleString()}
+        </Typography>
+      </CardBody>
+    </Card>
+  );
+
   return (
     <div className="mt-10 flex w-full flex-col gap-6 min-h-screen pb-10 px-4 bg-slate-50/50">
       
-      {/* 1. HERO SECTION */}
       <Card className="relative w-full overflow-hidden border border-gray-200 bg-gradient-to-br from-white to-gray-500/30 shadow-sm">
         <div className="absolute top-0 right-0 -mt-8 -mr-8 h-48 w-48 rounded-full bg-blue-100/30 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 -mb-8 -ml-8 h-48 w-48 rounded-full bg-slate-200/40 blur-3xl"></div>
@@ -110,7 +123,7 @@ export function Dasboard2() {
             <ServerStackIcon className="h-10 w-10 text-gray-900" />
           </div>
           <Typography variant="h1" color="blue-gray" className="mb-2 font-black tracking-tighter text-6xl">
-              {stats.loading ? "..." : <CountUp end={staticData.totalScrapped + stats.productCount} duration={2.5} separator="," />}
+             {(staticData.totalScrapped + stats.productCount).toLocaleString()}
           </Typography>
           <Typography variant="h6" className="font-bold text-gray-400 uppercase tracking-[0.2em] text-xs">
             total aggregated data
@@ -118,82 +131,67 @@ export function Dasboard2() {
         </CardBody>
       </Card>
 
-     
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <DashboardCard
-          title="Citywise Data Count"
-          value={stats.cityCount}
-          icon={MapPinIcon}
-          color="from-blue-400 to-blue-600"
-          link="/dashboard/cities-report"
-        />
-    {/* Commented out part for further enhancements 
-         <DashboardCard
-          title="Categorywise Data Count"
-          value={stats.categoryCount}
-          icon={TagIcon}
-          color="from-purple-400 to-purple-600"
-          link="/dashboard/categories-report"
-        />
-        <DashboardCard
-          title="City wise Category data count"
-          value={stats.cityCategoryCount}
-          icon={Squares2X2Icon}
-          color="from-teal-400 to-teal-600"
-          link="/dashboard/combined-report"
-          subValue="unique intersections"
-        /> */}
-      </div>
-
-      {/* 3. PRODUCT & LISTING DATA GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <DashboardCard
-          title="Historical Product Data"
+          title="Cities Scrapped"
+          value={stats.cityCount}
+          icon={MapPinIcon}
+          color="from-gray-400 to-gray-600"
+          link="/dashboard/cities-report"
+        />
+        <DashboardCard
+          title="Categories Scrapped"
+          value={stats.categoryCount}
+          icon={TagIcon}
+          color="from-gray-400 to-gray-600"
+          link="/dashboard/categories-report"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <DashboardCard
+          title="Product Data"
           subValue="global historical records"
           value={staticData.totalScrapped}
           icon={GlobeAmericasIcon}
-          color="from-gray-600 to-gray-800"
+          color="from-gray-400 to-gray-600"
           link="/dashboard/productdata-report"
         />
+
         <DashboardCard
-          title="Live Listing Data"
+          title="Listing Data"
           subValue="live google maps api"
           value={stats.productCount}
           icon={ArchiveBoxIcon}
-          color="from-green-500 to-green-700"
+          color="from-gray-400 to-gray-600"
           link="/dashboard/listingdata-report"
         />
       </div>
 
-      {/* 4. TOTAL DATA CARDS (RE-ADDED) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border border-gray-200 bg-gradient-to-br from-white to-gray-500/30">
-          <CardBody className="flex items-center justify-between p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <ChartBarIcon className="h-5 w-5 text-green-600" />
-              </div>
-              <Typography className="font-bold text-gray-700">total categories</Typography>
-            </div>
-            <Typography variant="h4" color="blue-gray" className="font-black">
-              {stats.loading ? "..." : <CountUp end={stats.categoryCount} duration={2} />}
-            </Typography>
-          </CardBody>
-        </Card>
+        <SlimStatsCard 
+          label="pending categories" 
+          value={stats.pendingCategories} 
+          icon={ChartBarIcon} 
+        />
+        <SlimStatsCard 
+          label="pending cities" 
+          value={stats.pendingCities} 
+          icon={ChartBarIcon} 
+        />
+      </div>
 
-        <Card className="border border-gray-200 bg-gradient-to-br from-white to-gray-500/30">
-          <CardBody className="flex items-center justify-between p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <ChartBarIcon className="h-5 w-5 text-green-600" />
-              </div>
-              <Typography className="font-bold text-gray-700">total areas</Typography>
-            </div>
-            <Typography variant="h4" color="blue-gray" className="font-black">
-              {stats.loading ? "..." : <CountUp end={stats.cityCount} duration={2} />}
-            </Typography>
-          </CardBody>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <SlimStatsCard 
+          label="total categories" 
+          value={stats.categoryCount} 
+          icon={ChartBarIcon} 
+        />
+        <SlimStatsCard 
+          label="total areas" 
+          value={stats.cityCount} 
+          icon={ChartBarIcon} 
+        />
       </div>
 
       <footer className="mt-auto pt-8 border-t border-gray-200 text-center md:text-left">

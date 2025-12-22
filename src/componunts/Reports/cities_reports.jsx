@@ -1,10 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Button,
   Card,
   CardBody,
-  CardHeader,
   Typography,
   Input,
   Spinner,
@@ -31,16 +29,7 @@ const defaultColumns = [
   { key: "state", label: "State", width: 140 },
 ];
 
-const convertToCSV = (arr) => {
-  if (!arr?.length) return "";
-  const headers = Object.keys(arr[0]);
-  const rows = arr.map((r) =>
-    headers.map((h) => `"${String(r[h] ?? "").replace(/"/g, "'")}"`).join(",")
-  );
-  return [headers.join(","), ...rows].join("\n");
-};
-
-export function cities_reports() {
+export function CitiesReports() {
   const [loading, setLoading] = useState(true);
   const [fullData, setFullData] = useState([]);
   const [pageData, setPageData] = useState([]);
@@ -48,13 +37,11 @@ export function cities_reports() {
   const [total, setTotal] = useState(0);
   const limit = 10;
 
+  // Initializing with empty string is crucial
   const [selectedCity, setSelectedCity] = useState(""); 
   const [categorySearch, setCategorySearch] = useState("");
-
   const [sortField, setSortField] = useState(null);
   const [sortOrder, setSortOrder] = useState("asc");
-
-  const [columns] = useState(defaultColumns);
 
   useEffect(() => {
     setLoading(true);
@@ -65,23 +52,32 @@ export function cities_reports() {
     }, 300);
   }, []);
 
+  // 1. STRICT DATA CLEANING: Trim spaces to ensure exact matches
   const uniqueCities = useMemo(() => {
     if (!fullData.length) return [];
-    const cities = [...new Set(fullData.map((item) => item.city).filter(Boolean))];
+    const cities = [
+      ...new Set(
+        fullData.map((item) => String(item.city || "").trim()).filter(Boolean)
+      ),
+    ];
     return cities.sort();
   }, [fullData]);
 
+  // 2. FILTER LOGIC
   const filteredData = useMemo(() => {
     let data = [...fullData];
-    const safeValue = (value) => String(value ?? "").toLowerCase();
+    
+    // Normalize values for comparison
+    const normalize = (val) => String(val || "").toLowerCase().trim();
+    const targetCity = normalize(selectedCity);
 
-    if (selectedCity) {
-      data = data.filter((x) => safeValue(x.city) === selectedCity.toLowerCase());
+    if (targetCity) {
+      data = data.filter((x) => normalize(x.city) === targetCity);
     }
 
     if (categorySearch) {
-      const s = categorySearch.toLowerCase();
-      data = data.filter((x) => safeValue(x.category).includes(s));
+      const s = normalize(categorySearch);
+      data = data.filter((x) => normalize(x.category).includes(s));
     }
 
     return data;
@@ -89,7 +85,6 @@ export function cities_reports() {
 
   const sortedData = useMemo(() => {
     if (!sortField) return filteredData;
-
     return [...filteredData].sort((a, b) => {
       const A = String(a[sortField] ?? "").toLowerCase();
       const B = String(b[sortField] ?? "").toLowerCase();
@@ -119,28 +114,6 @@ export function cities_reports() {
     }
   };
 
-  const downloadCSV = (currentOnly = false) => {
-    const arr = currentOnly ? pageData : filteredData; 
-    const csv = convertToCSV(arr);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = currentOnly ? "cities_report_page.csv" : "cities_report_all.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const downloadExcel = (currentOnly = false) => {
-    const arr = currentOnly ? pageData : filteredData;
-    if (!arr.length) return;
-
-    const ws = XLSX.utils.json_to_sheet(arr);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "CitiesData");
-    XLSX.writeFile(wb, currentOnly ? "cities_report_page.xlsx" : "cities_report_all.xlsx");
-  };
-
   return (
     <div className="min-h-screen mt-8 mb-12 px-4 rounded bg-[#F8FAFC] text-blue-gray-900">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -152,38 +125,48 @@ export function cities_reports() {
             Filter listings by specific cities
           </Typography>
         </div>
-
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          <Button size="sm" onClick={() => downloadCSV(false)} className="bg-gray-900 text-white shadow-none hover:shadow-md">
-            CSV All
-          </Button>
-          <Button size="sm" onClick={() => downloadCSV(true)} variant="outlined" className="border-gray-900 text-gray-900">
-            CSV Page
-          </Button>
-          <Button size="sm" onClick={() => downloadExcel(false)} className="bg-green-600 text-white shadow-none hover:shadow-md">
-            Excel All
-          </Button>
-        </div>
       </div>
 
-      <Card className="h-full w-full border border-gray-200 shadow-sm bg-white">
-        <CardHeader floated={false} shadow={false} className="rounded-none p-4 bg-gray-50 border-b border-gray-200">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+      <Card className="h-full w-full border border-gray-200 shadow-sm overflow-visible">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between m-5 overflow-visible">
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto overflow-visible">
+              
+              {/* FIXED SELECT COMPONENT */}
               <div className="w-full sm:w-72">
-                <Select
-                  label="Select City"
-                  value={selectedCity}
-                  onChange={(val) => setSelectedCity(val)}
-                  className="bg-white"
-                >
-                    <Option value="">All Cities</Option>
-                    {uniqueCities.map((city) => (
-                      <Option key={city} value={city}>
-                        {city}
-                      </Option>
-                    ))}
-                </Select>
+              
+                {!loading && uniqueCities.length > 0 ? (
+                  <Select
+                    label="Select City"
+                   
+                    value={selectedCity} 
+                    onChange={(val) => setSelectedCity(val)}
+                    className="bg-white"
+                    containerProps={{ className: "min-w-[100px]" }}
+                    
+                    key={`city-select-${selectedCity || 'empty'}`} 
+                  >
+                      {uniqueCities.map((city) => (
+                        <Option key={city} value={city}>
+                          {city}
+                        </Option>
+                      ))}
+                  </Select>
+                ) : (
+                   /* Placeholder while loading */
+                   <div className="w-full h-10 border border-gray-200 rounded-lg bg-gray-50 flex items-center px-3 text-gray-400 text-sm">
+                      Loading cities...
+                   </div>
+                )}
+                
+                {/* Clear Filter Button (Only shows when a city is selected) */}
+                {selectedCity && (
+                   <div 
+                     className="text-xs text-blue-600 font-bold cursor-pointer mt-1 text-right"
+                     onClick={() => setSelectedCity("")}
+                   >
+                     Clear Filter
+                   </div>
+                )}
               </div>
 
               <div className="w-full sm:w-72">
@@ -198,34 +181,31 @@ export function cities_reports() {
             </div>
 
             <div className="flex gap-2 items-center text-sm font-medium text-gray-600">
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
+              <span>Page {currentPage} of {totalPages}</span>
               <div className="flex gap-1">
                 <Button
-                  size="sm"
-                  variant="text"
-                  className="p-2 rounded-full hover:bg-gray-200"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
+                    size="sm"
+                    variant="text"
+                    className="p-2 rounded-full hover:bg-gray-200"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => p - 1)}
                 >
-                  <ChevronDownIcon className="h-4 w-4 rotate-90" />
+                    <ChevronDownIcon className="h-4 w-4 rotate-90" />
                 </Button>
                 <Button
-                  size="sm"
-                  variant="text"
-                  className="p-2 rounded-full hover:bg-gray-200"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
+                    size="sm"
+                    variant="text"
+                    className="p-2 rounded-full hover:bg-gray-200"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => p + 1)}
                 >
-                  <ChevronDownIcon className="h-4 w-4 -rotate-90" />
+                    <ChevronDownIcon className="h-4 w-4 -rotate-90" />
                 </Button>
               </div>
             </div>
           </div>
-        </CardHeader>
 
-        <CardBody className="p-0 overflow-x-auto">
+        <CardBody className="p-0 overflow-x-auto relative z-10">
           {loading ? (
             <div className="flex justify-center py-20">
               <Spinner className="h-12 w-12 text-gray-900" />
@@ -234,7 +214,7 @@ export function cities_reports() {
             <table className="w-full table-fixed border-collapse min-w-[1200px] text-left">
               <thead className="sticky top-0 z-20 border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase text-gray-500">
                 <tr>
-                  {columns.map((col) => (
+                  {defaultColumns.map((col) => (
                     <th
                       key={col.key}
                       style={{ width: col.width }}
@@ -243,15 +223,7 @@ export function cities_reports() {
                     >
                       <div className="flex items-center justify-between">
                         <span>{col.label}</span>
-                        {sortField === col.key ? (
-                          sortOrder === "asc" ? (
-                            <ChevronUpDownIcon className="h-4 w-4 text-gray-900" />
-                          ) : (
-                            <ChevronDownIcon className="h-4 w-4 text-gray-900" />
-                          )
-                        ) : (
-                          <ChevronUpDownIcon className="h-4 w-4 text-gray-300 opacity-50" />
-                        )}
+                        <ChevronUpDownIcon className="h-4 w-4" />
                       </div>
                     </th>
                   ))}
@@ -261,40 +233,16 @@ export function cities_reports() {
               <tbody className="text-sm text-gray-700">
                 {pageData.length === 0 ? (
                   <tr>
-                    <td colSpan={columns.length} className="text-center py-10 text-gray-500">
-                      <div className="flex flex-col items-center gap-2">
-                        <MagnifyingGlassIcon className="h-10 w-10 text-gray-300" />
-                        <Typography>No records found for this city.</Typography>
-                      </div>
+                    <td colSpan={defaultColumns.length} className="text-center py-10 text-gray-500">
+                      No records found.
                     </td>
                   </tr>
                 ) : (
                   pageData.map((row, idx) => (
-                    <tr
-                      key={idx}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                    >
-                      {columns.map((col) => (
-                        <td
-                          key={col.key}
-                          className="px-4 py-3 break-words align-top"
-                        >
-                          {col.key === "name" ? (
-                            <span className="font-semibold text-gray-900">
-                                {String(row[col.key] ?? "-")}
-                            </span>
-                          ) : col.key === "website" && row[col.key] ? (
-                            <a
-                              href={row[col.key]}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-blue-600 hover:underline truncate block w-full"
-                            >
-                              {String(row[col.key])}
-                            </a>
-                          ) : (
-                            String(row[col.key] ?? "-")
-                          )}
+                    <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      {defaultColumns.map((col) => (
+                        <td key={col.key} className="px-4 py-3 break-words align-top">
+                          {String(row[col.key] ?? "-")}
                         </td>
                       ))}
                     </tr>
@@ -305,45 +253,8 @@ export function cities_reports() {
           )}
         </CardBody>
       </Card>
-
-      <div className="mt-6 flex justify-end items-center gap-4">
-        <Button
-            variant="text"
-            className="flex items-center gap-2"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-        >
-            Previous
-        </Button>
-        <div className="flex items-center gap-2">
-            {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                 let p = i + 1;
-                 if (currentPage > 3 && totalPages > 5) p = currentPage - 2 + i;
-                 if (p > totalPages) return null;
-                 
-                 return (
-                    <Button
-                        key={p}
-                        variant={currentPage === p ? "filled" : "text"}
-                        className={`w-8 h-8 p-0 rounded-full ${currentPage === p ? "bg-gray-900" : ""}`}
-                        onClick={() => setCurrentPage(p)}
-                    >
-                        {p}
-                    </Button>
-                 )
-            })}
-        </div>
-        <Button
-            variant="text"
-            className="flex items-center gap-2"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-        >
-            Next
-        </Button>
-      </div>
     </div>
   );
 }
 
-export default cities_reports;
+export default CitiesReports;

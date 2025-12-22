@@ -14,6 +14,7 @@ import {
   MagnifyingGlassIcon,
   ChevronUpDownIcon,
   RectangleGroupIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/solid";
 import { listingData } from "@/data/listingJSON"; 
 import * as XLSX from "xlsx/dist/xlsx.full.min.js";
@@ -25,6 +26,8 @@ const defaultColumns = [
   { key: "address", label: "Address", width: 300 },
   { key: "phone_number", label: "Contact", width: 140 },
   { key: "city", label: "City", width: 140 },
+  // Optional: Add source column if you want to see it in the table
+  // { key: "source", label: "Source", width: 140 },
 ];
 
 export function CategoriesReports() {
@@ -34,8 +37,11 @@ export function CategoriesReports() {
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
 
+  // --- FILTERS STATE ---
   const [selectedCategory, setSelectedCategory] = useState(""); 
+  const [selectedSource, setSelectedSource] = useState(""); // <--- NEW STATE
   const [citySearch, setCitySearch] = useState("");
+  
   const [sortField, setSortField] = useState(null);
   const [sortOrder, setSortOrder] = useState("asc");
 
@@ -47,18 +53,55 @@ export function CategoriesReports() {
     }, 300);
   }, []);
 
+  // 1. GET UNIQUE CATEGORIES
   const uniqueCategories = useMemo(() => {
-    const categories = [...new Set(fullData.map((item) => item.category).filter(Boolean))];
+    if (!fullData.length) return [];
+    const categories = [
+      ...new Set(
+        fullData.map((item) => String(item.category || "").trim()).filter(Boolean)
+      ),
+    ];
     return categories.sort();
   }, [fullData]);
 
+  // 2. GET UNIQUE SOURCES (NEW LOGIC)
+  const uniqueSources = useMemo(() => {
+    if (!fullData.length) return [];
+    const sources = [
+      ...new Set(
+        // Ensure your JSON has a 'source' key, otherwise this returns empty
+        fullData.map((item) => String(item.source || "").trim()).filter(Boolean)
+      ),
+    ];
+    return sources.sort();
+  }, [fullData]);
+
+  // 3. FILTER LOGIC
   const filteredData = useMemo(() => {
     let data = [...fullData];
-    const safeValue = (value) => String(value ?? "").toLowerCase();
-    if (selectedCategory) data = data.filter((x) => safeValue(x.category) === selectedCategory.toLowerCase());
-    if (citySearch) data = data.filter((x) => safeValue(x.city).includes(citySearch.toLowerCase()));
+    
+    const normalize = (val) => String(val || "").toLowerCase().trim();
+    const targetCategory = normalize(selectedCategory);
+    const targetSource = normalize(selectedSource); // <--- NEW NORMALIZATION
+
+    // Filter by Category
+    if (targetCategory) {
+      data = data.filter((x) => normalize(x.category) === targetCategory);
+    }
+
+    // Filter by Source (NEW)
+    if (targetSource) {
+      data = data.filter((x) => normalize(x.source) === targetSource);
+    }
+    
+    // Filter by City Search
+    if (citySearch) {
+      const s = normalize(citySearch);
+      data = data.filter((x) => normalize(x.city).includes(s));
+    }
+    
     return data;
-  }, [fullData, selectedCategory, citySearch]);
+  }, [fullData, selectedCategory, selectedSource, citySearch]);
 
   const sortedData = useMemo(() => {
     if (!sortField) return filteredData;
@@ -69,6 +112,11 @@ export function CategoriesReports() {
       return sortOrder === "asc" ? (A > B ? 1 : -1) : (A < B ? 1 : -1);
     });
   }, [filteredData, sortField, sortOrder]);
+
+  // Reset page when any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, selectedSource, citySearch]);
 
   useEffect(() => {
     const start = (currentPage - 1) * limit;
@@ -88,7 +136,6 @@ export function CategoriesReports() {
 
   return (
     <div className="min-h-screen mt-8 mb-12 px-4 rounded bg-[#F8FAFC]">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-white shadow-sm rounded-xl border border-gray-200">
@@ -105,7 +152,6 @@ export function CategoriesReports() {
         </div>
       </div>
 
-      {/* Main Card - Removed overflow-hidden to let dropdown breathe */}
       <Card className="h-full w-full border border-gray-200 shadow-sm bg-white overflow-visible">
         <CardHeader 
           floated={false} 
@@ -113,37 +159,87 @@ export function CategoriesReports() {
           className="rounded-none p-6 bg-white border-b border-gray-100 overflow-visible"
         >
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between overflow-visible">
-            {/* Filter Container with high z-index */}
             <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto relative z-50">
-              <div className="w-full sm:w-80">
-                <Select 
-                  label="Filter by Category" 
-                  value={selectedCategory} 
-                  onChange={(val) => setSelectedCategory(val)} 
-                  className="bg-white border-gray-300"
-                  menuProps={{ className: "z-[9999]" }} // Ensures menu is above everything
-                >
-                  <Option value="">All Categories</Option>
-                  {uniqueCategories.map((cat) => (
-                    <Option key={cat} value={cat}>{cat}</Option>
-                  ))}
-                </Select>
+              
+              {/* --- 1. CATEGORY SELECT --- */}
+              <div className="w-full sm:w-64"> 
+                {!loading && uniqueCategories.length > 0 ? (
+                    <Select 
+                      key={`cat-select-${selectedCategory || 'empty'}`}
+                      label="Filter by Category" 
+                      value={selectedCategory} 
+                      onChange={(val) => setSelectedCategory(val)} 
+                      className="bg-white" 
+                      containerProps={{ className: "min-w-[100px]" }}
+                      menuProps={{ className: "z-[9999]" }}
+                    >
+                      {uniqueCategories.map((cat) => (
+                        <Option key={cat} value={cat}>{cat}</Option>
+                      ))}
+                    </Select>
+                ) : (
+                    <div className="w-full h-10 border border-gray-200 rounded-lg bg-gray-50 flex items-center px-3 text-gray-400 text-sm">
+                        Loading...
+                    </div>
+                )}
+                {selectedCategory && (
+                   <div className="text-xs text-blue-600 font-bold cursor-pointer mt-1 text-right select-none" onClick={() => setSelectedCategory("")}>
+                     Clear
+                   </div>
+                )}
               </div>
-              <div className="w-full sm:w-80">
+
+              {/* --- 2. SOURCE SELECT (NEW TAB IN BETWEEN) --- */}
+              <div className="w-full sm:w-64"> 
+                {!loading ? (
+                    <Select 
+                      key={`source-select-${selectedSource || 'empty'}`}
+                      label="Filter by Source" 
+                      value={selectedSource} 
+                      onChange={(val) => setSelectedSource(val)} 
+                      className="bg-white" 
+                      containerProps={{ className: "min-w-[100px]" }}
+                      menuProps={{ className: "z-[9999]" }}
+                      // Disable if no sources found in data
+                      disabled={uniqueSources.length === 0} 
+                    >
+                      {uniqueSources.length > 0 ? (
+                        uniqueSources.map((src) => (
+                          <Option key={src} value={src}>{src}</Option>
+                        ))
+                      ) : (
+                        <Option value="" disabled>No Sources Found</Option>
+                      )}
+                    </Select>
+                ) : (
+                    <div className="w-full h-10 border border-gray-200 rounded-lg bg-gray-50 flex items-center px-3 text-gray-400 text-sm">
+                        Loading...
+                    </div>
+                )}
+                {selectedSource && (
+                   <div className="text-xs text-blue-600 font-bold cursor-pointer mt-1 text-right select-none" onClick={() => setSelectedSource("")}>
+                     Clear
+                   </div>
+                )}
+              </div>
+
+              {/* --- 3. CITY SEARCH --- */}
+              <div className="w-full sm:w-64">
                 <Input 
                   label="Search by City..." 
                   value={citySearch} 
                   onChange={(e) => setCitySearch(e.target.value)} 
                   icon={<MagnifyingGlassIcon className="h-5 w-5" />} 
-                  className="bg-white !border-gray-300 focus:!border-gray-900" 
+                  className="bg-white" 
                 />
               </div>
+
             </div>
             
             <div className="bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
-               <Typography className="text-xs font-bold text-gray-500 uppercase">
-                 Found: <span className="text-gray-900 ml-1">{filteredData.length}</span>
-               </Typography>
+                <Typography className="text-xs font-bold text-gray-500 uppercase">
+                  Found: <span className="text-gray-900 ml-1">{filteredData.length}</span>
+                </Typography>
             </div>
           </div>
         </CardHeader>
@@ -192,7 +288,6 @@ export function CategoriesReports() {
         </CardBody>
       </Card>
 
-      {/* Pagination */}
       <div className="mt-8 flex justify-center items-center gap-2">
         <Button
           variant="text"

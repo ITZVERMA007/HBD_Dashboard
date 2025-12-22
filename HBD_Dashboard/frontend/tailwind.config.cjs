@@ -1,0 +1,23 @@
+/** @type {import('tailwindcss').Config} */
+const withMT = require("@material-tailwind/react/utils/withMT");
+
+module.exports = withMT({
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {},
+  },
+  plugins: [
+    function ({ addUtilities }) {
+      addUtilities({
+        /* Hide scrollbar but keep scrolling */
+        ".no-scrollbar": {
+          "-ms-overflow-style": "none", /* IE & Edge */
+          "scrollbar-width": "none", /* Firefox */
+        },
+        ".no-scrollbar::-webkit-scrollbar": {
+          display: "none", /* Chrome, Safari */
+        },
+      });
+    },
+  ],
+});
