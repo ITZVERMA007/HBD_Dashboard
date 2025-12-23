@@ -1,6 +1,6 @@
 import pandas as pd
 from database.mysql_connection import get_mysql_connection
-from utils import safe_get
+from utils.safe_get import safe_get
 
 
 def upload_magicpin_data(file_paths):
@@ -12,12 +12,11 @@ def upload_magicpin_data(file_paths):
     inserted = 0
     try:
         for file in file_paths:
-            if file.filename == "":
-                continue
-            chunkFile_data = pd.read_csv(file,chunksize = batch_size)
-            for chunk in chunkFile_data:
-                chunk_data = []
-                for row in chunk.itertuples(index=False):
+            with open(file,newline='',encoding='utf-8') as f:
+                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                for chunk in chunkFile_data:
+                    chunk_data = []
+                    for row in chunk.itertuples(index=False):
                         row_tuple = (
                         safe_get(row, 'name'),
                         safe_get(row, 'number'),
@@ -33,7 +32,7 @@ def upload_magicpin_data(file_paths):
                         safe_get(row, 'longitude')
                         )
                         chunk_data.append(row_tuple)
-                insert_query = """
+                    insert_query = """
                         INSERT INTO magicpin (
                             name,
                             number,
@@ -61,9 +60,9 @@ def upload_magicpin_data(file_paths):
                                     longitude = VALUES(longitude);
                     """
 
-                cursor.executemany(insert_query, chunk_data)
-                connection.commit()
-                inserted+=len(chunk_data)
+                    cursor.executemany(insert_query, chunk_data)
+                    connection.commit()
+                    inserted+=len(chunk_data)
         return inserted
     finally:
         cursor.close()

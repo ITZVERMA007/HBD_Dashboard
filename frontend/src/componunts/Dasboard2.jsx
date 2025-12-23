@@ -20,6 +20,10 @@ import SlotCounter from "react-slot-counter";
 
 import api from "../utils/Api";
 
+import {StatisticsChart} from "../widgets/charts/statistics-chart";
+import { ClockIcon } from "@heroicons/react/24/solid";
+import statisticsChartsData2 from "../data/statistics-charts-data2";
+
 export function Dasboard2() {
   const [stats, setStats] = useState({
     productCount: 0,
@@ -120,6 +124,24 @@ export function Dasboard2() {
         </CardBody>
       </Card>
 
+      {/* Charts */}
+      <div className="mb-6 grid grid-cols-1 gap-y-12 gap-x-6 md:grid-cols-2 xl:grid-cols-3">
+        {statisticsChartsData2.map((props) => (
+          <StatisticsChart
+            key={props.title}
+            {...props}
+            footer={
+              <Typography
+                variant="small"
+                className="flex items-center font-normal text-blue-gray-600"
+              >
+                <ClockIcon strokeWidth={2} className="h-4 w-4 text-blue-gray-400" />
+                &nbsp;{props.footer}
+              </Typography>
+            }
+          />
+        ))}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <DashboardCard
           title="Product Data"

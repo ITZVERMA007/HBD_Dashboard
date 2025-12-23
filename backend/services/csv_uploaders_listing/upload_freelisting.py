@@ -1,6 +1,6 @@
 import pandas as pd
 from database.mysql_connection import get_mysql_connection
-from utils import safe_get
+from utils.safe_get import safe_get
 
 
 def upload_freelisting_data(file_paths):
@@ -14,13 +14,12 @@ def upload_freelisting_data(file_paths):
 
     try:
         for file in file_paths:
-            if file.filename == "":
-                continue
-            chunkFile_data = pd.read_csv(file,chunksize = batch_size)
-            for chunk in chunkFile_data:
-                chunk_data = []
-                for row in chunk.itertuples(index=False):
-                    row_tuple = (
+            with open(file,newline='',encoding='utf-8') as f:
+                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                for chunk in chunkFile_data:
+                    chunk_data = []
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
                         safe_get(row, 'name'),
                         safe_get(row, 'phone'),
                         safe_get(row, 'address'),
@@ -33,10 +32,10 @@ def upload_freelisting_data(file_paths):
                         safe_get(row, 'catagories_4'),
                         safe_get(row, 'catagories_href_3'),
                         )
-                    chunk_data.append(row_tuple)
+                        chunk_data.append(row_tuple)
 
                     # execute batch insert
-                insert_query = '''
+                    insert_query = '''
                         INSERT INTO freelisting (
                             name, number, address, description, category, url, subcategory_1, subcategory_2, subcategory, categories_4, categories_href_3
                         ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
@@ -51,9 +50,9 @@ def upload_freelisting_data(file_paths):
                             categories_4 = VALUES(categories_4),
                             categories_href_3 = VALUES(categories_href_3);
                         '''
-                cursor.executemany(insert_query, chunk_data)
-                connection.commit()
-                inserted+=len(chunk_data)
+                    cursor.executemany(insert_query, chunk_data)
+                    connection.commit()
+                    inserted+=len(chunk_data)
         return inserted
     finally:
         cursor.close()

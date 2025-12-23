@@ -1,6 +1,7 @@
 import pandas as pd
 from database.mysql_connection import get_mysql_connection
-from utils import safe_get,clean_data_decimal
+from utils.safe_get import safe_get
+from utils.clean_data_decimal import clean_data_decimal
 
 def upload_justdial_data(file_paths):
         if not file_paths:
@@ -11,35 +12,34 @@ def upload_justdial_data(file_paths):
         inserted = 0
         try:
             for file in file_paths:
-                if file.filename == "":
-                    continue
-                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
-                for chunk in chunkFile_data:
-                    chunk_data = []
-                    for row in chunk.itertuples(index=False):
-                        row_tuple = (
-                        safe_get(row, 'category'),
-                        safe_get(row, 'city'),
-                        safe_get(row, 'company'),
-                        safe_get(row, 'area'),
-                        safe_get(row, 'address'),
-                        clean_data_decimal(safe_get(row, 'pin')),
-                        safe_get(row, 'emailaddress'),
-                        safe_get(row, 'virtualnumber'),
-                        safe_get(row, 'whatsapp'),
-                        safe_get(row, 'phone1'),
-                        safe_get(row, 'phone2'),
-                        safe_get(row, 'phone3'),
-                        safe_get(row, 'latitude'),
-                        safe_get(row, 'longitude'),
-                        safe_get(row, 'rating'),
-                        clean_data_decimal(safe_get(row, 'reviews')),
-                        safe_get(row, 'website'),
+                with open(file,newline='',encoding='utf-8') as f:
+                    chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                    for chunk in chunkFile_data:
+                        chunk_data = []
+                        for row in chunk.itertuples(index=False):
+                            row_tuple = (
+                            safe_get(row, 'category'),
+                            safe_get(row, 'city'),
+                            safe_get(row, 'company'),
+                            safe_get(row, 'area'),
+                            safe_get(row, 'address'),
+                            clean_data_decimal(safe_get(row, 'pin')),
+                            safe_get(row, 'emailaddress'),
+                            safe_get(row, 'virtualnumber'),
+                            safe_get(row, 'whatsapp'),
+                            safe_get(row, 'phone1'),
+                            safe_get(row, 'phone2'),
+                            safe_get(row, 'phone3'),
+                            safe_get(row, 'latitude'),
+                            safe_get(row, 'longitude'),
+                            safe_get(row, 'rating'),
+                            clean_data_decimal(safe_get(row, 'reviews')),
+                            safe_get(row, 'website'),
                         )
-                        chunk_data.append(row_tuple)
+                            chunk_data.append(row_tuple)
 
                     # execute batch insert
-                    insert_query = '''
+                        insert_query = '''
                         INSERT INTO justdial (
                             category, city, company, area, address, pin, email, virtualnumber, whatsapp, number1, number2, number3, latitude, longitude, rating, reviews, website
                         ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
@@ -60,9 +60,9 @@ def upload_justdial_data(file_paths):
                             reviews = VALUES(reviews),
                             website = VALUES(website);
                         '''
-                    cursor.executemany(insert_query, chunk_data)
-                    connection.commit()
-                    inserted+=len(chunk_data)
+                        cursor.executemany(insert_query, chunk_data)
+                        connection.commit()
+                        inserted+=len(chunk_data)
             return inserted
         finally:
             cursor.close()

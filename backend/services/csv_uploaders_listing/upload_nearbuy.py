@@ -1,6 +1,7 @@
 import pandas as pd
 from database.mysql_connection import get_mysql_connection
-from utils import safe_get,to_valid_json
+from utils.safe_get import safe_get
+from utils.to_valid_json import to_valid_json
 
 def upload_nearbuy_data(file_paths):
 
@@ -13,13 +14,12 @@ def upload_nearbuy_data(file_paths):
 
     try:
         for file in file_paths:
-            if file.filename == "":
-                continue
-            chunkFile_data = pd.read_csv(file,chunksize = batch_size)
-            for chunk in chunkFile_data:
-                chunk_data = []
-                for row in chunk.itertuples(index=False):
-                    row_tuple = (
+            with open(file,newline='',encoding='utf-8') as f:
+                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                for chunk in chunkFile_data:
+                    chunk_data = []
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
                         safe_get(row, 'Name'),
                         safe_get(row, 'Address'),
                         safe_get(row, 'Latitude'),
@@ -29,11 +29,11 @@ def upload_nearbuy_data(file_paths):
                         safe_get(row, 'Country'),
                         safe_get(row, 'City'),
                         )
-                    chunk_data.append(row_tuple)
+                        chunk_data.append(row_tuple)
 
 
                     # execute batch insert
-                insert_query = '''
+                    insert_query = '''
                         INSERT INTO nearbuy (
                             name, address, latitude, longitude, number, rating, country, city
                         ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
@@ -45,9 +45,9 @@ def upload_nearbuy_data(file_paths):
                             country = VALUES(country),
                             city = VALUES(city);
                         '''
-                cursor.executemany(insert_query, chunk_data)
-                connection.commit()
-                inserted+=len(chunk_data)
+                    cursor.executemany(insert_query, chunk_data)
+                    connection.commit()
+                    inserted+=len(chunk_data)
         return inserted
     finally:
         cursor.close()

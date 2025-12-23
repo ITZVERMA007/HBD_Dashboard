@@ -24,8 +24,6 @@ def upload_shiksha_route():
             f.save(filepath)
             paths.append(str(filepath))
 
-        print("SAVED PATHS:", paths)
-
         task = process_shiksha_task.delay(paths)
 
         return jsonify({
@@ -34,6 +32,4 @@ def upload_shiksha_route():
         }), 202
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         return jsonify({"error": str(e)}), 500

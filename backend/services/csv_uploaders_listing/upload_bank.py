@@ -1,6 +1,6 @@
 import pandas as pd
 from database.mysql_connection import get_mysql_connection
-from utils import safe_get
+from utils.safe_get import safe_get
 
 def upload_bank_data(file_paths):
     if not file_paths:
@@ -12,14 +12,13 @@ def upload_bank_data(file_paths):
 
     try:
         for file in file_paths:
-            if file.filename == "":
-                continue
-            chunkFile_data = pd.read_csv(file,chunksize = batch_size)
-            for chunk in chunkFile_data:
-                chunk = chunk.rename(columns = lambda c: c.replace(' ','_'))
-                chunk_data = []
-                for row in chunk.itertuples(index=False):
-                    row_tuple = (
+            with open(file,newline='',encoding='utf-8') as f:
+                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                for chunk in chunkFile_data:
+                    chunk = chunk.rename(columns = lambda c: c.replace(' ','_'))
+                    chunk_data = []
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
                         safe_get(row, 'Bank'),
                         safe_get(row, 'IFSC'),
                         safe_get(row, 'MICR'),
@@ -31,10 +30,10 @@ def upload_bank_data(file_paths):
                         safe_get(row, 'State'),
                         safe_get(row, 'Contact'),
                         )
-                    chunk_data.append(row_tuple)
+                        chunk_data.append(row_tuple)
 
                     # execute batch insert
-                insert_query = '''
+                    insert_query = '''
                         INSERT INTO bank_data (
                             bank, ifsc, micr, branch_code, branch, address, city, district, state, contact
                         ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
@@ -48,9 +47,9 @@ def upload_bank_data(file_paths):
                             state = VALUES(state),
                             contact = VALUES(contact);
                         '''
-                cursor.executemany(insert_query, chunk_data)
-                connection.commit()
-                inserted+=len(chunk_data)
+                    cursor.executemany(insert_query, chunk_data)
+                    connection.commit()
+                    inserted+=len(chunk_data)
         return inserted
     finally:
         cursor.close()

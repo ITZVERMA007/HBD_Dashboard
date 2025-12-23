@@ -46,7 +46,7 @@ const PindaUploader = () => {
       setLoading(true);
 
       const response = await api.post(
-        "/upload_Pinda_data",
+        "/pinda/upload/pinda-data",
         formData,
         {
           headers: {

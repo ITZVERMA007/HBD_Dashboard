@@ -1,6 +1,7 @@
 import pandas as pd
 from database.mysql_connection import get_mysql_connection
-from utils import safe_get,clean_data_decimal
+from utils.safe_get import safe_get
+from utils.clean_data_decimal import clean_data_decimal
 
 def upload_asklaila_data(file_paths):
     if not file_paths:
@@ -12,13 +13,12 @@ def upload_asklaila_data(file_paths):
 
     try:
         for file in file_paths:
-            if file.filename == "":
-                continue
-            chunkFile_data = pd.read_csv(file,chunksize = batch_size)
-            for chunk in chunkFile_data:
-                chunk_data = []
-                for row in chunk.itertuples(index=False):
-                    row_tuple = (
+            with open(file,newline='',encoding='utf-8') as f:
+                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                for chunk in chunkFile_data:
+                    chunk_data = []
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
                         safe_get(row, 'name'),
                         clean_data_decimal(safe_get(row, 'phone_1')),
                         clean_data_decimal(safe_get(row, 'phone_2')),
@@ -34,10 +34,10 @@ def upload_asklaila_data(file_paths):
                         safe_get(row,'state'),
                         safe_get(row,'country'),
                         )
-                    chunk_data.append(row_tuple)
+                        chunk_data.append(row_tuple)
 
             # execute batch insert
-                insert_query = '''
+                    insert_query = '''
                         INSERT INTO asklaila (
                             name, number1, number2, category,
                             subcategory, email, url, ratings, address, pincode, area, city, state, country
@@ -56,9 +56,9 @@ def upload_asklaila_data(file_paths):
                             state = VALUES(state),
                             country = VALUES(country);
                         '''
-                cursor.executemany(insert_query, chunk_data)
-                connection.commit()
-                inserted+=len(chunk_data)
+                    cursor.executemany(insert_query, chunk_data)
+                    connection.commit()
+                    inserted+=len(chunk_data)
         return inserted
     finally:
         cursor.close()

@@ -1,6 +1,6 @@
 import pandas as pd
 from database.mysql_connection import get_mysql_connection
-from utils import safe_get
+from utils.safe_get import safe_get
 
 def upload_amazon_products_data(file_paths):
     if not file_paths:
@@ -13,14 +13,13 @@ def upload_amazon_products_data(file_paths):
 
     try:
         for file in file_paths:
-            if file.filename == "": # handling empty files
-                continue   
-            chunkFile_data = pd.read_csv(file,chunk_size=batch_size)
-            for chunk in chunkFile_data:
-                chunk = chunk.rename(columns=lambda c:c.replace(' ','_'))
-                chunk_data=[]
-                for row in chunk.itertuples(index=False):
-                    row_tuple = (
+            with open(file,newline='',encoding='utf-8') as f:  
+                chunkFile_data = pd.read_csv(file,chunk_size=batch_size)
+                for chunk in chunkFile_data:
+                    chunk = chunk.rename(columns=lambda c:c.replace(' ','_'))
+                    chunk_data=[]
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
                         safe_get(row, 'ASIN'),                             
                         safe_get(row, 'Product_name'),
                         safe_get(row, 'price'),
@@ -41,18 +40,18 @@ def upload_amazon_products_data(file_paths):
                         safe_get(row, 'Product_details'),
                         safe_get(row, 'Additional_Details'),
                         safe_get(row, 'Manufacturer_Name'),
-                    )
-                    chunk_data.append(row_tuple)
+                        )
+                        chunk_data.append(row_tuple)
 
-                # storing the valus in the database
-                upload_amazon_products_data_query = '''
+                    # storing the valus in the database
+                    upload_amazon_products_data_query = '''
                     INSERT INTO amazon_products (
                         ASIN, Product_name, price, rating, Number_of_ratings, Brand, Seller, category, subcategory, sub_sub_category, category_sub_sub_sub,colour,size_options,description,link,Image_URLs,About_the_items_bullet,Product_details,Additional_Details,Manufacturer_Name
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 '''
-                cursor.executemany(upload_amazon_products_data_query,chunk_data)
-                connection.commit()
-                inserted+=len(chunk_data)
+                    cursor.executemany(upload_amazon_products_data_query,chunk_data)
+                    connection.commit()
+                    inserted+=len(chunk_data)
         return inserted
     finally:
         cursor.close()

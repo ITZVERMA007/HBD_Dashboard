@@ -1,6 +1,6 @@
 import pandas as pd
 from database.mysql_connection import get_mysql_connection
-from utils import safe_get
+from utils.safe_get import safe_get
 
 
 def upload_post_office_data(file_paths):
@@ -14,12 +14,11 @@ def upload_post_office_data(file_paths):
 
     try:
         for file in file_paths:
-            if file.filename == "":
-                continue
-            chunkFile_data = pd.read_csv(file,chunksize = batch_size)
-            for chunk in chunkFile_data:
-                chunk_data = []
-                for row in chunk.itertuples(index=False):
+            with open(file,newline='',encoding='utf-8') as f:
+                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                for chunk in chunkFile_data:
+                    chunk_data = []
+                    for row in chunk.itertuples(index=False):
                         row_tuple = (
                         safe_get(row, 'pincode'),
                         safe_get(row, 'area_name'),
@@ -30,7 +29,7 @@ def upload_post_office_data(file_paths):
                         chunk_data.append(row_tuple)
 
                     # execute batch insert
-                insert_query = '''
+                    insert_query = '''
                         INSERT INTO post_office (
                             pincode, area, taluka, city, state
                         ) VALUES (%s,%s,%s,%s,%s)
@@ -39,9 +38,9 @@ def upload_post_office_data(file_paths):
                             city = VALUES(city),
                             state = VALUES(state);
                         '''
-                cursor.executemany(insert_query, chunk_data)
-                connection.commit()
-                inserted+=len(chunk_data)
+                    cursor.executemany(insert_query, chunk_data)
+                    connection.commit()
+                    inserted+=len(chunk_data)
         return inserted
     finally:
         cursor.close()

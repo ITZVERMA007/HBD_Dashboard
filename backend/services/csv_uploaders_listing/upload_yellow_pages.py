@@ -1,6 +1,6 @@
 import pandas as pd
 from database.mysql_connection import get_mysql_connection
-from utils import safe_get
+from utils.safe_get import safe_get
 
 def upload_yellow_pages_data(file_paths):
     if not file_paths:
@@ -12,14 +12,13 @@ def upload_yellow_pages_data(file_paths):
 
     try:
         for file in file_paths:
-            if file.filename == "":
-                continue
-            chunkFile_data = pd.read_csv(file,chunksize = batch_size)
-            for chunk in chunkFile_data:
-                chunk = chunk.rename(columns=lambda c: c.replace(" ", "_"))
-                chunk_data = []
-                for row in chunk.itertuples(index=False):
-                    row_tuple = (
+            with open(file,newline='',encoding='utf-8') as f:
+                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                for chunk in chunkFile_data:
+                    chunk = chunk.rename(columns=lambda c: c.replace(" ", "_"))
+                    chunk_data = []
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
                             safe_get(row, 'Name'),
                             safe_get(row, 'Address'),
                             safe_get(row, 'Area'),
@@ -32,9 +31,9 @@ def upload_yellow_pages_data(file_paths):
                             safe_get(row, 'Country')
                         )
 
-                    chunk_data.append(row_tuple)
+                        chunk_data.append(row_tuple)
 
-                insert_query = """
+                    insert_query = """
                         INSERT INTO yellow_pages (
                             name, address, area, number, email, category,
                             pincode, city, state, country
@@ -51,9 +50,9 @@ def upload_yellow_pages_data(file_paths):
                         country = VALUES(country);
                     """
 
-                cursor.executemany(insert_query, chunk_data)
-                connection.commit()
-                inserted+=len(chunk_data)
+                    cursor.executemany(insert_query, chunk_data)
+                    connection.commit()
+                    inserted+=len(chunk_data)
         return inserted
     finally:
         cursor.close()

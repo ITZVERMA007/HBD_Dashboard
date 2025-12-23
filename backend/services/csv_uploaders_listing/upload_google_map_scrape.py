@@ -1,6 +1,6 @@
 import pandas as pd
 from database.mysql_connection import get_mysql_connection
-from utils import safe_get
+from utils.safe_get import safe_get
 
 
 def upload_google_map_scrape_data(file_paths):
@@ -12,14 +12,13 @@ def upload_google_map_scrape_data(file_paths):
     cursor = connection.cursor()
     try:
         for file in file_paths:
-            if file.filename == "":
-                continue
-            chunkFile_data = pd.read_csv(file,chunksize = batch_size)
-            for chunk in chunkFile_data:
-                chunk_data = []
-                chunk = chunk.rename(columns = lambda c: c.replace(' ','_'))
-                for row in chunk.itertuples(index=False):
-                    row_tuple = (
+            with open(file,newline='',encoding='utf-8') as f:
+                chunkFile_data = pd.read_csv(file,chunksize = batch_size)
+                for chunk in chunkFile_data:
+                    chunk_data = []
+                    chunk = chunk.rename(columns = lambda c: c.replace(' ','_'))
+                    for row in chunk.itertuples(index=False):
+                        row_tuple = (
                         safe_get(row, 'Name'),
                         safe_get(row, 'Mobile_Number'),
                         safe_get(row, 'Review_Count'),
@@ -38,10 +37,10 @@ def upload_google_map_scrape_data(file_paths):
                         safe_get(row, 'Twitter_Profile'),
                         safe_get(row, 'Images_Folder'),
                         )
-                    chunk_data.append(row_tuple)
+                        chunk_data.append(row_tuple)
 
                     # execute batch insert
-                insert_query = '''
+                    insert_query = '''
                         INSERT INTO google_map_scrape (
                             name, number, review_count, rating, category, address, website, email, pluscode, closing_hours, latitude, longitude, instagram_profile, facebook_profile, linkedin_profile, twitter_profile, images_folder
                         ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
@@ -62,9 +61,9 @@ def upload_google_map_scrape_data(file_paths):
                             twitter_profile = VALUES(twitter_profile),
                             images_folder = VALUES(images_folder);
                         '''
-                cursor.executemany(insert_query, chunk_data)
-                connection.commit()
-                inserted+=len(chunk_data)
+                    cursor.executemany(insert_query, chunk_data)
+                    connection.commit()
+                    inserted+=len(chunk_data)
         return inserted
     finally:
         cursor.close()
