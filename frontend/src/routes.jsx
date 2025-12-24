@@ -85,6 +85,13 @@ import PostOfficeUploader from "./componunts/data import/listing import/PostOffi
 import ShikshaUploader from "./componunts/data import/listing import/ShikshaUploader";
 import DuplicateData from "./componunts/listing master data/DuplicateData";
 import ShikshaData from "./componunts/listing master data/ShikshaData";
+import FlipkartScrapper from "./componunts/scrapper/FlipkartScrapper";
+import IndiamartScrapper from "./componunts/scrapper/IndiamartScrapper";
+import BlinkitScrapper from "./componunts/scrapper/BlinkitScrapper";
+import ZeptoScrapper from "./componunts/scrapper/ZeptoScrapper";
+import JiomartScrapper from "./componunts/scrapper/JiomartScrapper";
+import ZomatoScrapper from "./componunts/scrapper/ZomatoScrapper";
+import BigbasketScrapper from "./componunts/scrapper/BigbasketScrapper";
 import JioMartData from "./componunts/product master data/JioMart";
 import DmartData from "./componunts/product master data/DMart";
 import ZeptoData from "./componunts/product master data/Zepto";
@@ -623,6 +630,48 @@ export const routes = [
             name: "D-mart",
             path: "/scrapper/dmart",
             element: <DmartScrapper />,
+          },
+          {
+            icon: <ShoppingCartIcon {...icon} />,
+            name: "Flipkart",
+            path: "/scrapper/flipkart",
+            element: <FlipkartScrapper />,
+          },
+          {
+            icon: <ShoppingCartIcon {...icon} />,
+            name: "BigBasket",
+            path: "/scrapper/bigbasket",
+            element: <BigbasketScrapper />,
+          },
+          {
+            icon: <ShoppingCartIcon {...icon} />,
+            name: "Zomato",
+            path: "/scrapper/zomato",
+            element: <ZomatoScrapper />,
+          },
+          {
+            icon: <ShoppingCartIcon {...icon} />,
+            name: "Jio Mart",
+            path: "/scrapper/jiomart",
+            element: <JiomartScrapper />,
+          },
+          {
+            icon: <ShoppingCartIcon {...icon} />,
+            name: "Zepto",
+            path: "/scrapper/zepto",
+            element: <ZeptoScrapper />,
+          },
+          {
+            icon: <ShoppingCartIcon {...icon} />,
+            name: "Blinkit",
+            path: "/scrapper/blinkit",
+            element: <BlinkitScrapper />,
+          },
+          {
+            icon: <ShoppingCartIcon {...icon} />,
+            name: "India Mart",
+            path: "/scrapper/indiamart",
+            element: <IndiamartScrapper />,
           },
         ],
       },
