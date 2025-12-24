@@ -18,7 +18,7 @@ import { Home } from "./pages/dashboard/home";
 import { Profile } from "./pages/dashboard/profile";
 import { Tables } from "./pages/dashboard/tables";
 import { Notifications } from "./pages/dashboard/notifications";
-import ZomatoData from "./componunts/listing master data/ZomatoData";
+import ZomatoData from "./componunts/product master data/ZomatoData";
 import CitiesReports from "./componunts/Reports/cities_reports";
 import CategoriesReports from "./componunts/Reports/categories_reports";
 import BusinessCategory from "./componunts/masterdata/BusinessCategory";
@@ -42,7 +42,7 @@ import ProductDataImport from "./componunts/data import/ProductDataImport";
 import CleanListingMaster from "./componunts/clean master data/CleanListingMaster";
 import CleanProductMaster from "./componunts/clean master data/CleanProductMaster";
 import ListingCategory from "./componunts/masterdata/ListingCategory";
-import Dasboard2 from "./componunts/Dasboard2";
+import ReportDashboard from "./componunts/ReportDashboard";
 import ListingDataReport from "./componunts/ListingDataReport";
 import ProductDataReport from "./componunts/ProductDataReport";
 import MisReportTable from "./componunts/Misreport";
@@ -84,6 +84,11 @@ import FreelistingUploader from "./componunts/data import/FreelistingUploader";
 import PostOfficeUploader from "./componunts/data import/PostOfficeUploader";
 import ShikshaUploader from "./componunts/data import/ShikshaUploader";
 import ShikshaData from "./componunts/listing master data/ShikshaData";
+import JioMartData from "./componunts/product master data/JioMart";
+import DmartData from "./componunts/product master data/DMart";
+import ZeptoData from "./componunts/product master data/Zepto";
+import BlinkIt from "./componunts/product master data/BlinkIt";
+import IndiaMart from "./componunts/product master data/IndiaMart";
 
 // --- 2. Added Scraper Manager Import (Based on your previous file location) ---
 import { ScraperManager } from "./layouts/Scrapper_manager";
@@ -124,9 +129,9 @@ export const routes = [
       },
       {
         icon: <HomeIcon {...icon} />,
-        name: "dashboard",
+        name: "Data Report",
         path: "/home2",
-        element: <Dasboard2 />,
+        element: <ReportDashboard />,
       },
       {
         icon: <MagnifyingGlassIcon {...icon} />,
@@ -386,12 +391,6 @@ export const routes = [
           },
           {
             icon: <TableCellsIcon {...icon} />,
-            name: "Zomato Data",
-            path: "listing-master-data/zomato-data",
-            element: "ZomatoData />,",
-          },
-          {
-            icon: <TableCellsIcon {...icon} />,
             name: "Asklaila Data",
             path: "listing-master-data/asklaila-data",
             element: <AsklailaData />,
@@ -473,6 +472,42 @@ export const routes = [
             name: "BigBasket Data",
             path: "product-master-data/bigbasket-data",
             element: <BigBasketData />,
+          },
+          {
+            icon: <TableCellsIcon {...icon} />,
+            name: "Zomato Data",
+            path: "listing-master-data/zomato-data",
+            element: <ZomatoData />,
+          },
+          {
+            icon: <TableCellsIcon {...icon} />,
+            name: "Jio Mart",
+            path: "listing-master-data/jio-mart",
+            element: <JioMartData />,
+          },
+          {
+            icon: <TableCellsIcon {...icon} />,
+            name: "D-Mart Data",
+            path: "listing-master-data/D-mart-data",
+            element: <DmartData />,
+          },
+          {
+            icon: <TableCellsIcon {...icon} />,
+            name: "Zepto Data",
+            path: "listing-master-data/zepto-data",
+            element: <ZeptoData />,
+          },
+          {
+            icon: <TableCellsIcon {...icon} />,
+            name: "BlinkIt Data",
+            path: "listing-master-data/blinkit-data",
+            element: <BlinkIt />,
+          },
+          {
+            icon: <TableCellsIcon {...icon} />,
+            name: "India Mart Data",
+            path: "listing-master-data/india-mart-data",
+            element: <IndiaMart />,
           }
         ]
       },

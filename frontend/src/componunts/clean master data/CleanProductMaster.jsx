@@ -17,7 +17,6 @@ import { amazonProductData } from "@/data/amazonJSON";
 const LIMIT = 20;
 
 const COLUMNS = [
-  { key: "source", label: "Source", width: 120 },
   { key: "ASIN", label: "ASIN", width: 140 },
   { key: "title", label: "Product Title", width: 350 },
   { key: "price", label: "Price", width: 100 },
@@ -30,6 +29,7 @@ const COLUMNS = [
   { key: "url", label: "Product Link", width: 250 },
   { key: "image_url", label: "Image Link", width: 200 },
   { key: "manufacturer", label: "Manufacturer", width: 180 },
+  { key: "source", label: "Source", width: 120 },
 ];
 
 /* -------------------- Utils -------------------- */
